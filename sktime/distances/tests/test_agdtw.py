@@ -217,7 +217,7 @@ def test_kernel_distance_with_sigma_1():
         np.exp(-4 / (sigma ** 2)) + \
         np.exp(-4 / (sigma ** 2)) + \
         np.exp(-25 / (sigma ** 2))
-    actual_result = agdtw.kernel_distance(sample_path, sigma)
+    actual_result = agdtw.kernel_result(sample_path, sigma)
     assert expected_result == pytest.approx(actual_result)
 
 
@@ -236,7 +236,7 @@ def test_kernel_distance_with_sigma_one_half():
         np.exp(-4 / (sigma ** 2)) + \
         np.exp(-4 / (sigma ** 2)) + \
         np.exp(-25 / (sigma ** 2))
-    actual_result = agdtw.kernel_distance(sample_path, sigma)
+    actual_result = agdtw.kernel_result(sample_path, sigma)
     assert expected_result == pytest.approx(actual_result)
 
 
@@ -251,7 +251,7 @@ def test_kernel_distance_throws_with_sigma_zero():
     ])
     sigma = 0.0
     with pytest.raises(ZeroDivisionError):
-        agdtw.kernel_distance(sample_path, sigma)
+        agdtw.kernel_result(sample_path, sigma)
 
 
 def test_kernel_distance_with_sigma_thirtythree():
@@ -269,7 +269,7 @@ def test_kernel_distance_with_sigma_thirtythree():
         np.exp(-4 / (sigma ** 2)) + \
         np.exp(-4 / (sigma ** 2)) + \
         np.exp(-25 / (sigma ** 2))
-    actual_result = agdtw.kernel_distance(sample_path, sigma)
+    actual_result = agdtw.kernel_result(sample_path, sigma)
     assert expected_result == pytest.approx(actual_result)
 
 

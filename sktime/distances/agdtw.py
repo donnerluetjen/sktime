@@ -53,15 +53,17 @@ def agdtw_distance(first, second, window=1, sigma=1.0):
     # reduce series to 1D arrays
     first = first.squeeze()
     second = second.squeeze()
+    # make sure first series is not longer than second one
+    if len(first) > len(second):
+        first, second = second, first
     pairwise_distances = get_pairwise_distances(first, second)
     warp_matrix = warping_matrix(pairwise_distances, window)
     pairwise_similarities = get_pairwise_agdtw_similarities(first, second,
                                                             sigma)
     index_of_last_cell = np.subtract(warp_matrix.shape, 1)
-    warp_path = warping_path(index_of_last_cell,
-                             warp_matrix, pairwise_similarities)
 
-    return warp_path[0]['dist']
+    return kernel_result(index_of_last_cell,
+                         warp_matrix, pairwise_similarities)
 
 
 def get_pairwise_distances(first, second):
@@ -73,7 +75,7 @@ def get_pairwise_distances(first, second):
     distances
     """
 
-    return np.power(np.subtract.outer(first, second) ** 2, 2)
+    return np.power(np.subtract.outer(first, second) ** 2, 0.5)
 
 
 def get_pairwise_agdtw_similarities(first, second, sigma):
@@ -84,8 +86,8 @@ def get_pairwise_agdtw_similarities(first, second, sigma):
     @return: np.array containing a matrix with agdtw similarity values
     """
 
-    return np.exp(- np.divide(np.power(np.subtract.outer(first, second), 2),
-                              sigma))
+    return np.exp(- np.power(np.divide(np.subtract.outer(first, second),
+                                       sigma), 2))
 
 
 def warping_matrix(pairwise_distances, window=1.0):
@@ -105,106 +107,40 @@ def warping_matrix(pairwise_distances, window=1.0):
     # 1 >= window >= 0
     window = min(1.0, abs(window))
     # working on indices requires absolute_window_size to be integer
-    absolute_window_size = int(min(row_dim, col_dim) * window)
-
+    absolute_window_size = int(max(row_dim, col_dim) * window)
+    if row_dim + absolute_window_size < col_dim:
+        raise ValueError("window ist too small!")
     # initialise matrix
     warp_matrix = np.full([row_dim, col_dim], np.inf)
 
-    warp_matrix[0][0] = pairwise_distances[0][0]
     # then initialise edges of the warping matrix with accumulated distances
-    for i in range(1, absolute_window_size):
-        warp_matrix[0][i] = pairwise_distances[0][i] + warp_matrix[0][
-            i - 1]
-        warp_matrix[i][0] = pairwise_distances[i][0] + warp_matrix[i - 1][
-            0]
+    warp_matrix[0] = np.cumsum(pairwise_distances[0])
+    for row in range(1, warp_matrix.shape[0]):
+        warp_matrix[row][0] = warp_matrix[row - 1][0] \
+                              + pairwise_distances[row][0]
 
     # now visit all allowed cells, calculate the value as the distance
     # in this cell + min(top, left, or top-left)
     # traverse each row,
     for row in range(1, row_dim):
         # traverse left and right by the allowed window
-        window_range_start = max(1, row - absolute_window_size)
-        window_range_end = min(col_dim, row + absolute_window_size + 1)
+        window_range_start = row - absolute_window_size
+        window_range_end = row + absolute_window_size + 1
         for column in range(window_range_start, window_range_end):
-            # if not 1 <= column < col_dim:
-            #     continue
+            if not 1 <= column < col_dim:
+                continue
 
             # find smallest entry in the warping matrix, either above,
             # to the left, or diagonally left and up
-            above = warp_matrix[row - 1][column]
-            left = warp_matrix[row][column - 1]
-            diag = warp_matrix[row - 1][column - 1]
+            neighbor_minimum = np.amin(warp_matrix[row-1:row+1,
+                                       column-1:column+1])
 
             # add the pairwise distance for [row][column] to the minimum
             # of the three possible potential cells
             warp_matrix[row][column] = \
-                pairwise_distances[row][column] + min(above, left, diag)
+                pairwise_distances[row][column] + neighbor_minimum
 
     return warp_matrix
-
-
-def euclidean_distance(x, y):
-    """
-    Calculates the euclidean distance between two elements of two
-    univariate time series
-    @param x: element from first series
-    @param y: element from second series
-    @return euclidean distance
-    """
-    return abs(x - y)
-
-
-def squared_euclidean_along_warp_path(matrix, pairwise_distances):
-    """
-    Creates the warping path along the minimum total distance between the
-    two series in the matrix
-    @matrix: the warping matrix
-    @first: numpy array containing the first time series
-    @second: numpy array containing the second time series
-    @return: numpy array containing the euclidean distance along the warp path
-    between the relevant elements in the form [dist_eu, i_s, j_s
-    """
-    matrix_dim = matrix.shape
-    warp_path = np.full((sum(matrix_dim), 1), np.NAN)
-    # initialize to max length warping path
-    wp_index = len(warp_path) - 1  # we start at the end
-
-    wm_index = (matrix_dim[0] - 1, matrix_dim[1] - 1)
-    while True:
-        # store the distances, index of Ys, index of Xs
-        warp_path[wp_index] = [pairwise_distances[wm_index]]
-        wp_index -= 1
-
-        if wm_index == (0, 0):
-            break  # we're finished
-
-        # point to min element
-        # ToDo: return the wm_index that has the best distance
-        wm_index = index_of_section_min_around(matrix, wm_index)
-
-    # remove the remaining NANs
-    return warp_path[~ (np.isnan(warp_path).any(axis=1))]
-
-
-def dynamic_section(matrix, current_index=(0, 0)):
-    """
-    returns a section of the given matrix neighboring the current cell to
-    the left and above and below
-    @param matrix: a numpy array containing the original matrix
-    @param current_index: a tuple of integers representing the index of the
-    current cell into the matrix
-    @return: a numpy array containing the desired section
-    """
-    section_org_row = max(current_index[0] - 1, 0)
-    section_org_col = max(current_index[1] - 1, 0)
-    section_end_row = min(current_index[0] + 1, matrix.shape[0])
-    section_end_col = current_index[1]
-    # copy section and make its elements float to for allow np.inf
-    section = matrix[
-              section_org_row:section_end_row + 1,
-              section_org_col:section_end_col + 1
-              ].copy().astype(float)
-    return section
 
 
 def indices_of_minimum_neighbors(matrix, current_index=(0, 0)):
@@ -234,71 +170,7 @@ def indices_of_minimum_neighbors(matrix, current_index=(0, 0)):
     return minimum_neighbors
 
 
-def index_of_section_min_around(matrix, current_index=(0, 0)):
-    """
-    Reads the values around the given current cell and returns an index to
-    the minimum of these values. Respecting the boundaries of the
-    original matrix the function evaluates the following values:
-    ... ___________________
-    ... | value | value   | ...
-    ... | value | current | ...
-    ... | value | value   | ...
-        ___________________
-    ...
-    @param matrix: numpy array containing the warping matrix
-    @param current_index: tuple with the 2D index pointing to current cell
-    @return: a tuple containing the index for the matrix pointing to the
-             minimum value within the given section
-    """
-
-    # if at origin of matrix return (0, 0)
-    if current_index == (0, 0):
-        return current_index
-    section = dynamic_section(matrix, current_index)
-
-    section_current_row = min(current_index[0], 1)
-    section_current_col = min(current_index[1], 1)
-    # prevent current cell from being found as minimum
-    section[(section_current_row, section_current_col)] = np.inf
-    # find minimum cell in section
-    min_section_index = np.unravel_index(np.argmin(section, axis=None),
-                                         section.shape)
-    # find minimum index
-    section_org_row = max(current_index[0] - 1, 0)
-    section_org_col = max(current_index[1] - 1, 0)
-    min_row = section_org_row + min_section_index[0]
-    min_col = section_org_col + min_section_index[1]
-    return min_row, min_col  # point to minimum element from section
-
-
-def warping_path(index, warping_matrix, pairwise_similarities):
-    """
-    calculates the path along the maximum similarity starting at the given
-    index
-    @param index: a tuple containing the index of the current cell
-    @param warping_matrix: numpy array with the original warping matrix
-    @param pairwise_similarities: numpy array with the pairwise distances
-    @result: a list of points on the path containing dictionaries with the
-    accumulated distances and the indexes along the path
-    """
-    if (index == (0, 0)).all():  # base condition
-        return [{'dist': pairwise_similarities[index[0]][index[1]],
-                 'index': index}]
-    maximum_distance = 0  # to find a maximum
-    maximum_path = []
-    all_maximum_path_cells = indices_of_minimum_neighbors(warping_matrix,
-                                                          index)
-    for cell in all_maximum_path_cells:
-        w_path = warping_path(cell, warping_matrix, pairwise_similarities)
-        if w_path[0]['dist'] > maximum_distance:
-            maximum_path = w_path
-    new_path = [{'dist': maximum_path[0]['dist']
-                         + pairwise_similarities[index[0]][index[1]],
-                 'index': index}, *maximum_path]
-    return new_path
-
-
-def kernel_distance(squared_euclidean_distances, sigma):
+def kernel_result(index, warping_matrix, pairwise_similarities):
     """
     calculates the kernel distance by processing each individual distance
     along the warping squared_euclidean_distances
@@ -308,33 +180,52 @@ def kernel_distance(squared_euclidean_distances, sigma):
     @param sigma: float representing the kernel parameter
     @return: float containing the kernel distance
     """
-    if sigma == 0:
-        raise ZeroDivisionError(
-            "The kernel parameter <sigma> must not be zero, "
-            "since we're using it for a division.")
-    normalized_distances = squared_euclidean_distances / (sigma ** 2)
-    kernel_distances = np.exp(-normalized_distances).squeeze()
-    return sum(kernel_distances)
+    if (index == (0, 0)).all():  # base condition
+        return pairwise_similarities[index[0]][index[1]]
+    # find all neighboring cells containing
+    # the minimum value among the neighbors
+    all_minimum_neighbor_cell_indexes = indices_of_minimum_neighbors(
+        warping_matrix, index)
+    # find the similarity values for all those minimum neighbor cells
+    min_neighbor_sims = np.array(
+        [kernel_result(cell, warping_matrix, pairwise_similarities) for cell
+         in all_minimum_neighbor_cell_indexes])
+    # take the maximum similarity value found
+    max_sim = np.amax(min_neighbor_sims)
+    # and add this cell's similarity value
+    return max_sim + pairwise_similarities[index[0]][index[1]]
 
 
 if __name__ == '__main__':
-    from sklearn.model_selection import train_test_split
-    from sktime.datasets import load_UCR_UEA_dataset
-    from sktime.classification.distance_based import \
-        KNeighborsTimeSeriesClassifier
-    import sys
-    sys.setrecursionlimit(10000)
+    # from sklearn.model_selection import train_test_split
+    # from sktime.datasets import load_UCR_UEA_dataset
+    # from sktime.classification.distance_based import \
+    #     KNeighborsTimeSeriesClassifier
+    # import sys
+    # sys.setrecursionlimit(50000)
+    #
+    # X, y = load_UCR_UEA_dataset("SwedishLeaf", return_X_y=True)
+    # X_train, X_test, y_train, y_test = train_test_split(X, y)
+    # knn = KNeighborsTimeSeriesClassifier(n_neighbors=1, metric="agdtw",
+    #                                      metric_params={'window': 1,
+    #                                                     'sigma': 1})
+    # knn.fit(X_train, y_train)
+    # knn.score(X_test, y_test)
 
-    X, y = load_UCR_UEA_dataset("SwedishLeaf", return_X_y=True)
-    X_train, X_test, y_train, y_test = train_test_split(X, y)
-    knn = KNeighborsTimeSeriesClassifier(n_neighbors=1, metric="agdtw",
-                                         metric_params={'window': 1,
-                                                        'sigma': 1})
-    knn.fit(X_train, y_train)
-    knn.score(X_test, y_test)
     # from numpy import random as rd
     #
     # rd.seed(42)
-    # d, p = agdtw_distance(rd.uniform(50, 100, (1, rd.randint(50, 100))),
-    #                    rd.uniform(50, 100, (1, rd.randint(50, 100))))
-    # print(d)  # 7.875725076955164
+    # d = agdtw_distance(rd.uniform(50, 100, (1, rd.randint(50, 100))),
+    #                    rd.uniform(50, 100, (1, rd.randint(50, 100))),
+    #                    window=.20)
+    # window=0.10 => path length 37, similarity: 11.64236104257441
+    # window=0.20 => path length 115, similarity: 16.829648242308732
+    # window=0.21 => path length 116, similarity:  8.144502935591454
+    # window=0.30 => path length 37, similarity:  8.145653835249655
+    # window=0.50 => path length 37, similarity:  8.145653835249655
+    # window=1.00 => path length 37, similarity:  8.145653835249655
+
+    s2 = np.array([[3,1,5,2]])
+    s1 = np.array([[3,2,2,2,3,1]])
+    d = agdtw_distance(s1, s2, window = 0.5)
+    print(d)  # 7.875725076955164
