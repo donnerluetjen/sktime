@@ -1,6 +1,8 @@
 __author__ = "Ansgar Asseburg"
 __email__ = "devaa@donnerluetjen.de"
 
+from copy import deepcopy
+
 import numpy as np
 
 
@@ -60,7 +62,7 @@ def agdtw_distance(first, second, window=1, sigma=1.0):
     warp_matrix = warping_matrix(pairwise_distances, window)
     pairwise_similarities = get_pairwise_agdtw_similarities(first, second,
                                                             sigma)
-    index_of_last_cell = np.subtract(warp_matrix.shape, 1)
+    index_of_last_cell = tuple(np.subtract(warp_matrix.shape, 1))
 
     return kernel_result(index_of_last_cell,
                          warp_matrix, pairwise_similarities)
@@ -83,6 +85,7 @@ def get_pairwise_agdtw_similarities(first, second, sigma):
     calculates the pairwise agdtw similarity values for the two series
     @param first: np.array containing the first series
     @param second: np.array containing the second series
+    @param sigma: a number containing the sigma value for the agdtw calculation
     @return: np.array containing a matrix with agdtw similarity values
     """
 
@@ -94,8 +97,8 @@ def warping_matrix(pairwise_distances, window=1.0):
     """
     Creates the warping matrix while respecting a given window
     *** part of the code was adopted from elastic.py by Jason Lines ***
-    @param series_1: numpy array containing the first series
-    @param series_2: numpy array containing the second series
+    @param pairwise_distances: numpy array containing the distances between any
+    two points in first and second series
     @param window: float representing the window width as ratio of the
     window and the longer series
     @return: 2D numpy array containing the minimum squared distances
@@ -132,8 +135,8 @@ def warping_matrix(pairwise_distances, window=1.0):
 
             # find smallest entry in the warping matrix, either above,
             # to the left, or diagonally left and up
-            neighbor_minimum = np.amin(warp_matrix[row-1:row+1,
-                                       column-1:column+1])
+            neighbor_minimum = np.amin(warp_matrix[row - 1:row + 1,
+                                       column - 1:column + 1])
 
             # add the pairwise distance for [row][column] to the minimum
             # of the three possible potential cells
@@ -143,11 +146,14 @@ def warping_matrix(pairwise_distances, window=1.0):
     return warp_matrix
 
 
-def indices_of_minimum_neighbors(matrix, current_index=(0, 0)):
+def indices_of_minimum_neighbors(matrix, current_index=(0, 0),
+                                 visited_neighbors={}):
     """ finds indices pointing to minimum values within the neighboring cells
     of current_index
     @param matrix: numpy array with the original warping matrix
     @param current_index: tuple pointing to the current index
+    @param visited_neighbors: dictionary containing cells that must not be
+    visited anymore
     @return: a list containing all the index tuples that point to the minimum
     value among the neighbors
     """
@@ -162,55 +168,75 @@ def indices_of_minimum_neighbors(matrix, current_index=(0, 0)):
     left_below = (section_end_row, section_org_col)
     below = (section_end_row, section_end_col)
     # remove duplicates
-    neighbors = np.unique([above, left_above, left, left_below, below], axis=0)
-    neighbors = np.array([x for x in neighbors if (x != current_index).any()])
+    neighbors = set([above, left_above, left, left_below, below])
+    neighbors = [x for x in neighbors if (x not in visited_neighbors)]
     neighbors_minimum = np.amin([matrix[x[0]][x[1]] for x in neighbors])
     minimum_neighbors = [index for index in neighbors
                          if matrix[index[0]][index[1]] == neighbors_minimum]
     return minimum_neighbors
 
 
-def kernel_result(index, warping_matrix, pairwise_similarities):
+def kernel_result(index, warping_matrix, pairwise_similarities,
+                  result_store={}, visited_neighbors={}):
     """
     calculates the kernel distance by processing each individual distance
     along the warping squared_euclidean_distances
-    @param squared_euclidean_distances: numpy array containing the warping
-    squared_euclidean_distances with euclidean
-    distance between the relevant elements in the form [dist_eu, i_s, j_s
-    @param sigma: float representing the kernel parameter
+    @param index: tuple containing the current index into the warping matrix
+    @param warping_matrix: numpy array containing the warping matrix
+    @param pairwise_similarities: a numpy array containing the pairwise
+    similarity values
+    @param result_store: dictionary storing the results for memoization -
+    needs to be accessible to all recursion levels, thus must be
+    passed by reference
+    @param visited_neighbors: dictionary holding the visited neighbors for all
+    downstream recursions - it must be passed by value
     @return: float containing the kernel distance
     """
-    if (index == (0, 0)).all():  # base condition
+    # return early if result is known already
+    if index in result_store:
+        return result_store[index]
+
+    if index == (0, 0):  # base condition
         return pairwise_similarities[index[0]][index[1]]
+
+    # copy visited_neighbors to emulate pass-by-value
+    local_visited_neighbors = deepcopy(visited_neighbors)
+    # and add current index
+    local_visited_neighbors[index] = True
     # find all neighboring cells containing
     # the minimum value among the neighbors
     all_minimum_neighbor_cell_indexes = indices_of_minimum_neighbors(
-        warping_matrix, index)
+        warping_matrix, index, local_visited_neighbors)
     # find the similarity values for all those minimum neighbor cells
     min_neighbor_sims = np.array(
-        [kernel_result(cell, warping_matrix, pairwise_similarities) for cell
+        [kernel_result(cell, warping_matrix, pairwise_similarities,
+                       result_store, local_visited_neighbors) for cell
          in all_minimum_neighbor_cell_indexes])
     # take the maximum similarity value found
     max_sim = np.amax(min_neighbor_sims)
     # and add this cell's similarity value
-    return max_sim + pairwise_similarities[index[0]][index[1]]
+    result = max_sim + pairwise_similarities[index[0]][index[1]]
+    # store result for memoization
+    result_store[index] = result
+    return result
 
 
 if __name__ == '__main__':
-    # from sklearn.model_selection import train_test_split
-    # from sktime.datasets import load_UCR_UEA_dataset
-    # from sktime.classification.distance_based import \
-    #     KNeighborsTimeSeriesClassifier
-    # import sys
-    # sys.setrecursionlimit(50000)
-    #
-    # X, y = load_UCR_UEA_dataset("SwedishLeaf", return_X_y=True)
-    # X_train, X_test, y_train, y_test = train_test_split(X, y)
-    # knn = KNeighborsTimeSeriesClassifier(n_neighbors=1, metric="agdtw",
-    #                                      metric_params={'window': 1,
-    #                                                     'sigma': 1})
-    # knn.fit(X_train, y_train)
-    # knn.score(X_test, y_test)
+    from sklearn.model_selection import train_test_split
+    from sktime.datasets import load_UCR_UEA_dataset
+    from sktime.classification.distance_based import \
+        KNeighborsTimeSeriesClassifier
+    import sys
+
+    sys.setrecursionlimit(30000)
+
+    X, y = load_UCR_UEA_dataset("DodgerLoopDay", return_X_y=True)
+    X_train, X_test, y_train, y_test = train_test_split(X, y)
+    knn = KNeighborsTimeSeriesClassifier(n_neighbors=1, metric="agdtw",
+                                         metric_params={'window': 1,
+                                                        'sigma': 1})
+    knn.fit(X_train, y_train)
+    knn.score(X_test, y_test)
 
     # from numpy import random as rd
     #
@@ -225,7 +251,7 @@ if __name__ == '__main__':
     # window=0.50 => path length 37, similarity:  8.145653835249655
     # window=1.00 => path length 37, similarity:  8.145653835249655
 
-    s2 = np.array([[3,1,5,2]])
-    s1 = np.array([[3,2,2,2,3,1]])
-    d = agdtw_distance(s1, s2, window = 0.5)
-    print(d)  # 7.875725076955164
+    # s2 = np.array([[3,1,5,2]])
+    # s1 = np.array([[3,2,2,2,3,1]])
+    # d = agdtw_distance(s1, s2, window = 0.5)
+    # print(d)  # 7.875725076955164
