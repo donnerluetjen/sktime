@@ -73,10 +73,9 @@ def get_pairwise_distances(first, second):
     calculates the pairwise squared euclidean distances for the two series
     @param first: np.array containing the first series
     @param second: np.array containing the second series
-    @return: np.array containing a matrix with pairwise squared euclidean
+    @return: np.array containing a matrix with pairwise euclidean
     distances
     """
-
     return np.power(np.subtract.outer(first, second) ** 2, 0.5)
 
 
@@ -228,15 +227,15 @@ if __name__ == '__main__':
         KNeighborsTimeSeriesClassifier
     import sys
 
-    sys.setrecursionlimit(30000)
-
-    X, y = load_UCR_UEA_dataset("DodgerLoopDay", return_X_y=True)
-    X_train, X_test, y_train, y_test = train_test_split(X, y)
-    knn = KNeighborsTimeSeriesClassifier(n_neighbors=1, metric="agdtw",
-                                         metric_params={'window': 1,
-                                                        'sigma': 1})
-    knn.fit(X_train, y_train)
-    knn.score(X_test, y_test)
+    # sys.setrecursionlimit(30000)
+    #
+    # X, y = load_UCR_UEA_dataset("DodgerLoopDay", return_X_y=True)
+    # X_train, X_test, y_train, y_test = train_test_split(X, y)
+    # knn = KNeighborsTimeSeriesClassifier(n_neighbors=1, metric="agdtw",
+    #                                      metric_params={'window': 1,
+    #                                                     'sigma': 1})
+    # knn.fit(X_train, y_train)
+    # knn.score(X_test, y_test)
 
     # from numpy import random as rd
     #
@@ -251,7 +250,7 @@ if __name__ == '__main__':
     # window=0.50 => path length 37, similarity:  8.145653835249655
     # window=1.00 => path length 37, similarity:  8.145653835249655
 
-    # s2 = np.array([[3,1,5,2]])
-    # s1 = np.array([[3,2,2,2,3,1]])
-    # d = agdtw_distance(s1, s2, window = 0.5)
-    # print(d)  # 7.875725076955164
+    s2 = np.array([[3,1,5,2]])
+    s1 = np.array([[3,2,2,2,3,1]])
+    d = agdtw_distance(s1, s2, window = 0.5)
+    print(d)  # 7.875725076955164
