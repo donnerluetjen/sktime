@@ -4,6 +4,7 @@ __email__ = "devaa@donnerluetjen.de"
 from copy import deepcopy
 
 import numpy as np
+import time
 
 
 def agdtw_distance(first, second, window=1, sigma=1.0):
@@ -156,18 +157,14 @@ def indices_of_minimum_neighbors(matrix, current_index=(0, 0),
     @return: a list containing all the index tuples that point to the minimum
     value among the neighbors
     """
-    section_org_row = max(current_index[0] - 1, 0)
-    section_org_col = max(current_index[1] - 1, 0)
-    section_end_row = min(current_index[0] + 1, matrix.shape[0] - 1)
-    section_end_col = current_index[1]
+    northern_row = max(current_index[0] - 1, 0)
+    western_col = max(current_index[1] - 1, 0)
     # indices to all neighbors
-    above = (section_org_row, section_end_col)
-    left_above = (section_org_row, section_org_col)
-    left = (current_index[0], section_org_col)
-    left_below = (section_end_row, section_org_col)
-    below = (section_end_row, section_end_col)
+    above = (northern_row, current_index[1])
+    left_above = (northern_row, western_col)
+    left = (current_index[0], western_col)
     # remove duplicates
-    neighbors = set([above, left_above, left, left_below, below])
+    neighbors = set([above, left_above, left])
     neighbors = [x for x in neighbors if (x not in visited_neighbors)]
     neighbors_minimum = np.amin([matrix[x[0]][x[1]] for x in neighbors])
     minimum_neighbors = [index for index in neighbors
@@ -226,16 +223,17 @@ if __name__ == '__main__':
     from sktime.classification.distance_based import \
         KNeighborsTimeSeriesClassifier
     import sys
+    import timeit
 
-    # sys.setrecursionlimit(30000)
-    #
-    # X, y = load_UCR_UEA_dataset("DodgerLoopDay", return_X_y=True)
-    # X_train, X_test, y_train, y_test = train_test_split(X, y)
-    # knn = KNeighborsTimeSeriesClassifier(n_neighbors=1, metric="agdtw",
-    #                                      metric_params={'window': 1,
-    #                                                     'sigma': 1})
-    # knn.fit(X_train, y_train)
-    # knn.score(X_test, y_test)
+    X, y = load_UCR_UEA_dataset("DodgerLoopDay", return_X_y=True)
+    X_train, X_test, y_train, y_test = train_test_split(X, y)
+    start_time = time.perf_counter()
+
+    knn = KNeighborsTimeSeriesClassifier(n_neighbors=1, metric="agdtw",
+                                         metric_params={'window': 1,
+                                                        'sigma': 1})
+    knn.fit(X_train, y_train)
+    print(f"Score: {knn.score(X_test, y_test)}")
 
     # from numpy import random as rd
     #
@@ -250,7 +248,10 @@ if __name__ == '__main__':
     # window=0.50 => path length 37, similarity:  8.145653835249655
     # window=1.00 => path length 37, similarity:  8.145653835249655
 
-    s2 = np.array([[3,1,5,2]])
-    s1 = np.array([[3,2,2,2,3,1]])
-    d = agdtw_distance(s1, s2, window = 0.5)
-    print(d)  # 7.875725076955164
+    # s2 = np.array([[5, 7, 4, 4, 3, 2]])
+    # s1 = np.array([[1, 2, 3, 2, 2]])
+    # d = agdtw_distance(s1, s2, window = 0.5)
+    # print(d)  # 7.875725076955164
+
+    end_time = time.perf_counter()
+    print(f"Elapsed Time: {end_time - start_time}")

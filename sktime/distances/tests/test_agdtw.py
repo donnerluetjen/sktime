@@ -38,7 +38,7 @@ def test_pairwise_distance():
     assert (expected_result == actual_result).all()
 
 
-def test_pairwise_similarities_with_sigma_1():
+def test_pairwise_similarities_with_sigma_1_short():
     import numpy as np
     import sktime.distances.agdtw as agdtw
 
@@ -59,7 +59,7 @@ def test_pairwise_similarities_with_sigma_1():
         assert (pytest.approx(expected_result[i], 0.001) == actual_result[i])
 
 
-def test_pairwise_similarities_with_sigma_1():
+def test_pairwise_similarities_with_sigma_1_and_first_series_long():
     import numpy as np
     import sktime.distances.agdtw as agdtw
 
@@ -78,6 +78,31 @@ def test_pairwise_similarities_with_sigma_1():
         [1.83156388887342e-02, 3.67879441171442e-01, 1e+00,
          3.67879441171442e-01, 3.67879441171442e-01],
         [3.67879441171442e-01, 1e+00, 3.67879441171442e-01, 1e+00, 1e+00]]
+
+    actual_result = agdtw.get_pairwise_agdtw_similarities(series_1,
+                                                          series_2, 1)
+    for i in range(len(expected_result)):
+        assert (pytest.approx(expected_result[i], 0.001) == actual_result[i])
+
+
+def test_pairwise_similarities_with_sigma_1_and_first_series_short():
+    import numpy as np
+    import sktime.distances.agdtw as agdtw
+
+    series_1 = np.array([1, 2, 3, 2, 2])
+    series_2 = np.array([5, 7, 4, 4, 3, 2])
+
+    expected_result = [
+        [1.12535174719259e-07, 2.31952283024357e-16, 1.2340980408668e-04,
+         1.2340980408668e-04, 1.83156388887342e-02, 3.67879441171442e-01],
+        [1.2340980408668e-04, 1.3887943864964e-11, 1.83156388887342e-02,
+         1.83156388887342e-02, 3.67879441171442e-01, 1e+00],
+        [1.83156388887342e-02, 1.12535174719259e-07, 3.67879441171442e-01,
+         3.67879441171442e-01, 1e+00, 3.67879441171442e-01],
+        [1.2340980408668e-04, 1.3887943864964e-11, 1.83156388887342e-02,
+         1.83156388887342e-02, 3.67879441171442e-01, 1e+00],
+        [1.2340980408668e-04, 1.3887943864964e-11, 1.83156388887342e-02,
+         1.83156388887342e-02, 3.67879441171442e-01, 1e+00]]
 
     actual_result = agdtw.get_pairwise_agdtw_similarities(series_1,
                                                           series_2, 1)
@@ -121,7 +146,7 @@ def test_indices_of_minimum_neighbors():
         [(0, 1), (0, 2)],
         [(0, 0), (1, 0)],
         [(0, 0), (1, 1)],
-        [(2, 2), (1, 2)],
+        [(0, 1), (1, 2)],
         [(1, 0), (2, 0)],
         [(2, 0), (2, 1)],
         [(1, 1), (2, 2)]
@@ -277,4 +302,4 @@ def test_agdtw_distance_returns_correct_result(series_1, series_2,
     import sktime.distances.agdtw as agdtw
 
     actual_result = agdtw.agdtw_distance(series_1, series_2)
-    assert correct_result == pytest.approx(actual_result, 0.00001)
+    assert actual_result == pytest.approx(correct_result, 0.00001)
