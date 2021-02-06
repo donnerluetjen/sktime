@@ -29,11 +29,20 @@ MULTIVARIATES = [
      rd.uniform(-50, 100, (rd.randint(2, 10), rd.randint(50, 100)))]
 ]
 
-SAMPLE = [
+AGDTW_SAMPLE = [
     [np.array([[5, 7, 4, 4, 3, 2]]),
      np.array([[1, 2, 3, 2, 2]]),
-     3.73575899489195e+00],
+     3.73575899489195e+00 / 7],
     [np.array([[1, 2, 3, 4, 5]]),
      np.array([[1, 2, 3, 4, 5]]),
-     5.0]
+     5.0 / 5]
+]
+
+KERNEL_TEST_SAMPLE = [
+    [np.array([5, 7, 4, 4, 3, 2]),
+     np.array([1, 2, 3, 2, 2]),
+     {'similarity': 3.73575899489195e+00, 'wp_length': 7}],
+    [np.array([1, 2, 3, 4, 5]),
+     np.array([1, 2, 3, 4, 5]),
+     {'similarity': 5.0, 'wp_length': 5}]
 ]

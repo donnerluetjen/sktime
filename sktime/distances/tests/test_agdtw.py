@@ -279,6 +279,29 @@ def test_kernel_result_result_store_is_used():
     agdtw.indices_of_minimum_neighbors = store
 
 
+@pytest.mark.parametrize("series_1, series_2, expected_result",
+                         cfg.KERNEL_TEST_SAMPLE)
+def test_kernel_result_returns_dict_of_similarity_and_length(series_1,
+                                                             series_2,
+                                                             expected_result):
+    import numpy as np
+    import sktime.distances.agdtw as agdtw
+    pairwise_distances = agdtw.get_pairwise_distances(series_2, series_1)
+    pairwise_similarities = agdtw.get_pairwise_agdtw_similarities(series_2,
+                                                                  series_1, 1)
+    # warping_matrix = warp_matrix = np.zeros([5, 5])
+    warping_matrix = agdtw.warping_matrix(pairwise_distances)
+    visited = {}
+    result_store = {}
+    index = tuple(np.subtract(warping_matrix.shape, 1))
+    actual_result = agdtw.kernel_result(index, warping_matrix,
+                                        pairwise_similarities, result_store,
+                                        visited)
+    assert actual_result['similarity'] == pytest.approx(
+        expected_result['similarity'], 1e-5)
+    assert actual_result['wp_length'] == expected_result['wp_length']
+
+
 @pytest.mark.parametrize("series_1, series_2", cfg.MULTIVARIATES)
 def test_agdtw_distance_throws_for_multivariates(series_1, series_2):
     import sktime.distances.agdtw as agdtw
@@ -296,10 +319,10 @@ def test_agdtw_distance_returns_single_value(series_1, series_2):
     assert isinstance(actual_result, Number)
 
 
-@pytest.mark.parametrize("series_1, series_2, correct_result", cfg.SAMPLE)
+@pytest.mark.parametrize("series_1, series_2, expected_result",
+                         cfg.AGDTW_SAMPLE)
 def test_agdtw_distance_returns_correct_result(series_1, series_2,
-                                               correct_result):
+                                               expected_result):
     import sktime.distances.agdtw as agdtw
-
     actual_result = agdtw.agdtw_distance(series_1, series_2)
-    assert actual_result == pytest.approx(correct_result, 0.00001)
+    assert actual_result == pytest.approx(expected_result, 0.00001)

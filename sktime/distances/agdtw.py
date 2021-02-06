@@ -65,8 +65,10 @@ def agdtw_distance(first, second, window=1, sigma=1.0):
                                                             sigma)
     index_of_last_cell = tuple(np.subtract(warp_matrix.shape, 1))
 
-    return kernel_result(index_of_last_cell,
-                         warp_matrix, pairwise_similarities)
+    warping_path_result = kernel_result(index_of_last_cell,
+                                        warp_matrix, pairwise_similarities,
+                                        result_store={})
+    return warping_path_result['similarity'] / warping_path_result['wp_length']
 
 
 def get_pairwise_distances(first, second):
@@ -186,14 +188,15 @@ def kernel_result(index, warping_matrix, pairwise_similarities,
     passed by reference
     @param visited_neighbors: dictionary holding the visited neighbors for all
     downstream recursions - it must be passed by value
-    @return: float containing the kernel distance
+    @return: dict containing the similarity value and the warping path length
     """
     # return early if result is known already
     if index in result_store:
         return result_store[index]
 
     if index == (0, 0):  # base condition
-        return pairwise_similarities[index[0]][index[1]]
+        return {'similarity': pairwise_similarities[index[0]][index[1]],
+                'wp_length': 1}
 
     # copy visited_neighbors to emulate pass-by-value
     local_visited_neighbors = deepcopy(visited_neighbors)
@@ -204,16 +207,28 @@ def kernel_result(index, warping_matrix, pairwise_similarities,
     all_minimum_neighbor_cell_indexes = indices_of_minimum_neighbors(
         warping_matrix, index, local_visited_neighbors)
     # find the similarity values for all those minimum neighbor cells
-    min_neighbor_sims = np.array(
+    min_neighbor_results = np.array(
         [kernel_result(cell, warping_matrix, pairwise_similarities,
                        result_store, local_visited_neighbors) for cell
          in all_minimum_neighbor_cell_indexes])
     # take the maximum similarity value found
-    max_sim = np.amax(min_neighbor_sims)
+    min_neighbor_similarities = [r['similarity'] for r in min_neighbor_results]
+    min_neighbor_wp_lengths = [r['wp_length'] for r in min_neighbor_results]
+    max_similarity = np.amax(min_neighbor_similarities)
+    wp_length = min_neighbor_wp_lengths[
+        min_neighbor_similarities.index(max_similarity)]
     # and add this cell's similarity value
-    result = max_sim + pairwise_similarities[index[0]][index[1]]
+    similarity_result = max_similarity + pairwise_similarities[index[0]][
+        index[1]]
+    # add this step to warping path length
+    wp_length_result = wp_length + 1
     # store result for memoization
+    result = {'similarity': similarity_result, 'wp_length': wp_length_result}
     result_store[index] = result
+    # ToDo: divide the result by the length of the warping path; every
+    #  recursion result will be divided, thus when you have a result r from
+    #  a previous recursion with a pyth length of l, the new result is
+    #  (r*l+new_r)/(l+1)
     return result
 
 
@@ -233,7 +248,15 @@ if __name__ == '__main__':
                                          metric_params={'window': 1,
                                                         'sigma': 1})
     knn.fit(X_train, y_train)
-    print(f"Score: {knn.score(X_test, y_test)}")
+    score = knn.score(X_test, y_test)
+    print(f"Score: {score}")
+
+    """
+    Score: 0.125
+    Elapsed Time: 2.017e+03 s
+
+    Process finished with exit code 0
+    """
 
     # from numpy import random as rd
     #
@@ -251,7 +274,7 @@ if __name__ == '__main__':
     # s2 = np.array([[5, 7, 4, 4, 3, 2]])
     # s1 = np.array([[1, 2, 3, 2, 2]])
     # d = agdtw_distance(s1, s2, window = 0.5)
-    # print(d)  # 7.875725076955164
+    # print(f"Similarity: {d}")  # 7.875725076955164
 
     end_time = time.perf_counter()
-    print(f"Elapsed Time: {end_time - start_time}")
+    print(f"Elapsed Time: {(end_time - start_time):.3e} s")
