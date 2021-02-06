@@ -326,3 +326,14 @@ def test_agdtw_distance_returns_correct_result(series_1, series_2,
     import sktime.distances.agdtw as agdtw
     actual_result = agdtw.agdtw_distance(series_1, series_2)
     assert actual_result == pytest.approx(expected_result, 0.00001)
+
+
+@pytest.mark.parametrize("series_1, series_2", cfg.NAN_SAMPLES)
+def test_series_are_stripped_from_NaNs(series_1, series_2):
+    import sktime.distances.agdtw as agdtw
+    import numpy as np
+
+    sum_not_NaN = np.sum(agdtw.strip_nans(series_1))
+    assert not np.isnan(sum_not_NaN)
+    sum_not_NaN = np.sum(agdtw.strip_nans(series_2))
+    assert not np.isnan(sum_not_NaN)

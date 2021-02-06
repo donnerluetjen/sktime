@@ -46,3 +46,16 @@ KERNEL_TEST_SAMPLE = [
      np.array([1, 2, 3, 4, 5]),
      {'similarity': 5.0, 'wp_length': 5}]
 ]
+
+NAN_SAMPLES = [
+    [np.concatenate((rd.uniform(50, 100, (1, rd.randint(50, 100))),
+                     np.array([[np.NaN]]),
+                     rd.uniform(50, 100, (1, rd.randint(50, 100)))),
+                    axis=1),
+     rd.uniform(50, 100, (1, rd.randint(50, 100)))],
+    [rd.uniform(-50, 100, (1, rd.randint(50, 100))),
+     np.concatenate((rd.uniform(50, 100, (1, rd.randint(50, 100))),
+                     np.array([[np.NaN]]),
+                     rd.uniform(50, 100, (1, rd.randint(50, 100)))),
+                    axis=1)]
+]

@@ -53,9 +53,9 @@ def agdtw_distance(first, second, window=1, sigma=1.0):
     if first.shape[0] * second.shape[0] != 1:
         raise ValueError("time series must be univariate!")
 
-    # reduce series to 1D arrays
-    first = first.squeeze()
-    second = second.squeeze()
+    # reduce series to 1D arrays and remove NANs
+    first = strip_nans(first.squeeze())
+    second = strip_nans(second.squeeze())
     # make sure first series is not longer than second one
     if len(first) > len(second):
         first, second = second, first
@@ -68,7 +68,13 @@ def agdtw_distance(first, second, window=1, sigma=1.0):
     warping_path_result = kernel_result(index_of_last_cell,
                                         warp_matrix, pairwise_similarities,
                                         result_store={})
+    # normalize the similarity value by dividing by the number of values
+    # accumulated
     return warping_path_result['similarity'] / warping_path_result['wp_length']
+
+
+def strip_nans(series):
+    return series[~np.isnan(series)]
 
 
 def get_pairwise_distances(first, second):
