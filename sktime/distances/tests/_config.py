@@ -41,10 +41,10 @@ AGDTW_SAMPLE = [
 KERNEL_TEST_SAMPLE = [
     [np.array([5, 7, 4, 4, 3, 2]),
      np.array([1, 2, 3, 2, 2]),
-     {'similarity': 3.73575899489195e+00, 'wp_length': 7}],
+     {'similarity': 3.73575899489195e+00 / 7, 'wp_length': 7}],
     [np.array([1, 2, 3, 4, 5]),
      np.array([1, 2, 3, 4, 5]),
-     {'similarity': 5.0, 'wp_length': 5}]
+     {'similarity': 5.0 / 5, 'wp_length': 5}]
 ]
 
 NAN_SAMPLES = [

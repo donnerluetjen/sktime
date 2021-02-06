@@ -41,6 +41,7 @@ def agdtw_distance(first, second, window=1, sigma=1.0):
     }
 
     the method accepts two univariate time series, eg. 2D single row arrays
+    the passed in time series are stripped from NANs
     @param first: numpy array containing the first time series
     @param second: numpy array containing the second time series
     @param window: float representing the window width as ratio of the window
@@ -70,7 +71,7 @@ def agdtw_distance(first, second, window=1, sigma=1.0):
                                         result_store={})
     # normalize the similarity value by dividing by the number of values
     # accumulated
-    return warping_path_result['similarity'] / warping_path_result['wp_length']
+    return warping_path_result['similarity']
 
 
 def strip_nans(series):
@@ -224,12 +225,14 @@ def kernel_result(index, warping_matrix, pairwise_similarities,
     wp_length = min_neighbor_wp_lengths[
         min_neighbor_similarities.index(max_similarity)]
     # and add this cell's similarity value
-    similarity_result = max_similarity + pairwise_similarities[index[0]][
-        index[1]]
+    # since every recursion averages the similarity value we'll undo this here
+    similarity_result = max_similarity * wp_length + \
+                        pairwise_similarities[index[0]][index[1]]
     # add this step to warping path length
     wp_length_result = wp_length + 1
     # store result for memoization
-    result = {'similarity': similarity_result, 'wp_length': wp_length_result}
+    result = {'similarity': similarity_result / wp_length_result,
+              'wp_length': wp_length_result}
     result_store[index] = result
     # ToDo: divide the result by the length of the warping path; every
     #  recursion result will be divided, thus when you have a result r from
@@ -258,8 +261,17 @@ if __name__ == '__main__':
     print(f"Score: {score}")
 
     """
+    Without taking the average of all similarities
+    DodgerLoopDay
     Score: 0.125
     Elapsed Time: 2.017e+03 s
+
+    Process finished with exit code 0
+    
+    With taking the average of all similarities
+    DodgerLoopDay
+    Score: 0.075
+    Elapsed Time: 4.661e+03 s
 
     Process finished with exit code 0
     """
