@@ -225,12 +225,12 @@ def kernel_result(index, warping_matrix, pairwise_similarities,
         min_neighbor_similarities.index(max_similarity)]
     # and add this cell's similarity value
     # since every recursion averages the similarity value we'll undo this here
-    similarity_result = max_similarity * wp_length + \
-                        pairwise_similarities[index[0]][index[1]]
+    similarity_result = max_similarity \
+                        + pairwise_similarities[index[0]][index[1]]
     # add this step to warping path length
     wp_length_result = wp_length + 1
     # store result for memoization
-    result = {'similarity': similarity_result / wp_length_result,
+    result = {'similarity': similarity_result,
               'wp_length': wp_length_result}
     result_store[index] = result
     # ToDo: divide the result by the length of the warping path; every
@@ -268,15 +268,14 @@ if __name__ == '__main__':
     print("f1 score: ", f1_score(y_test, y_test_pred, average='macro'))
     print("recall: ", recall_score(y_test, y_test_pred, average='macro'))
 
-
     """
-    With averaging the similarity value
-    accuracy:  0.35
-    f1 score:  0.3350383631713555
-    recall:  0.33838383838383834
-    Elapsed Time: 4.945e+03 s
+    Without averaging the similarity value
+    accuracy:  0.5
+    f1 score:  0.4666666666666666
+    recall:  0.5137844611528822
+    Elapsed Time: 5.393e+03 s
     
-    Process finished with exit code 0
+    Process finished with exit code 0 
     """
 
     end_time = time.perf_counter()
