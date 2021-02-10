@@ -246,19 +246,30 @@ if __name__ == '__main__':
     from sktime.datasets import load_UCR_UEA_dataset
     from sktime.classification.distance_based import \
         KNeighborsTimeSeriesClassifier
-    import sys
-    import timeit
+
+    from sklearn.metrics import (
+        accuracy_score,
+        recall_score,
+        roc_auc_score,
+        roc_curve,
+        average_precision_score,
+        f1_score,
+        make_scorer,
+    )
 
     X, y = load_UCR_UEA_dataset("DodgerLoopDay", return_X_y=True)
     X_train, X_test, y_train, y_test = train_test_split(X, y)
     start_time = time.perf_counter()
 
-    knn = KNeighborsTimeSeriesClassifier(n_neighbors=1, metric="agdtw",
-                                         metric_params={'window': 1,
-                                                        'sigma': 1})
+    knn = KNeighborsTimeSeriesClassifier(n_neighbors=1, metric="agdtw")
     knn.fit(X_train, y_train)
-    score = knn.score(X_test, y_test)
-    print(f"Score: {score}")
+    y_test_pred = knn.predict(X_test)
+    print("accuracy: ", accuracy_score(y_test, y_test_pred))
+    print("f1 score: ", f1_score(y_test, y_test_pred, average='macro'))
+    print("recall: ", recall_score(y_test, y_test_pred, average='macro'))
+
+    # score = knn.score(X_test, y_test)
+    # print(f"Score: {score}")
 
     """
     Without taking the average of all similarities
