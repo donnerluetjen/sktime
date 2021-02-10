@@ -4,7 +4,6 @@ __email__ = "devaa@donnerluetjen.de"
 from copy import deepcopy
 
 import numpy as np
-import time
 
 
 def agdtw_distance(first, second, window=1, sigma=1.0):
@@ -54,9 +53,9 @@ def agdtw_distance(first, second, window=1, sigma=1.0):
     if first.shape[0] * second.shape[0] != 1:
         raise ValueError("time series must be univariate!")
 
-    # reduce series to 1D arrays and remove NANs
-    first = strip_nans(first.squeeze())
-    second = strip_nans(second.squeeze())
+    # reduce series to 1D arrays and replace NANs
+    first = replace_nans(first.squeeze())
+    second = replace_nans(second.squeeze())
     # make sure first series is not longer than second one
     if len(first) > len(second):
         first, second = second, first
@@ -74,8 +73,8 @@ def agdtw_distance(first, second, window=1, sigma=1.0):
     return warping_path_result['similarity']
 
 
-def strip_nans(series):
-    return series[~np.isnan(series)]
+def replace_nans(series):
+    return np.nan_to_num(series)
 
 
 def get_pairwise_distances(first, second):
@@ -256,8 +255,9 @@ if __name__ == '__main__':
         f1_score,
         make_scorer,
     )
+    import time
 
-    X, y = load_UCR_UEA_dataset("DodgerLoopDay", return_X_y=True)
+    X, y = load_UCR_UEA_dataset("DodgerLoopGame", return_X_y=True)
     X_train, X_test, y_train, y_test = train_test_split(X, y)
     start_time = time.perf_counter()
 
@@ -268,42 +268,16 @@ if __name__ == '__main__':
     print("f1 score: ", f1_score(y_test, y_test_pred, average='macro'))
     print("recall: ", recall_score(y_test, y_test_pred, average='macro'))
 
-    # score = knn.score(X_test, y_test)
-    # print(f"Score: {score}")
 
     """
-    Without taking the average of all similarities
-    DodgerLoopDay
-    Score: 0.125
-    Elapsed Time: 2.017e+03 s
-
-    Process finished with exit code 0
+    With averaging the similarity value
+    accuracy:  0.35
+    f1 score:  0.3350383631713555
+    recall:  0.33838383838383834
+    Elapsed Time: 4.945e+03 s
     
-    With taking the average of all similarities
-    DodgerLoopDay
-    Score: 0.075
-    Elapsed Time: 4.661e+03 s
-
     Process finished with exit code 0
     """
-
-    # from numpy import random as rd
-    #
-    # rd.seed(42)
-    # d = agdtw_distance(rd.uniform(50, 100, (1, rd.randint(50, 100))),
-    #                    rd.uniform(50, 100, (1, rd.randint(50, 100))),
-    #                    window=.20)
-    # window=0.10 => path length 37, similarity: 11.64236104257441
-    # window=0.20 => path length 115, similarity: 16.829648242308732
-    # window=0.21 => path length 116, similarity:  8.144502935591454
-    # window=0.30 => path length 37, similarity:  8.145653835249655
-    # window=0.50 => path length 37, similarity:  8.145653835249655
-    # window=1.00 => path length 37, similarity:  8.145653835249655
-
-    # s2 = np.array([[5, 7, 4, 4, 3, 2]])
-    # s1 = np.array([[1, 2, 3, 2, 2]])
-    # d = agdtw_distance(s1, s2, window = 0.5)
-    # print(f"Similarity: {d}")  # 7.875725076955164
 
     end_time = time.perf_counter()
     print(f"Elapsed Time: {(end_time - start_time):.3e} s")
