@@ -225,18 +225,14 @@ def kernel_result(index, warping_matrix, pairwise_similarities,
         min_neighbor_similarities.index(max_similarity)]
     # and add this cell's similarity value
     # since every recursion averages the similarity value we'll undo this here
-    similarity_result = max_similarity \
-                        + pairwise_similarities[index[0]][index[1]]
+    similarity_result = max_similarity * wp_length + \
+                        pairwise_similarities[index[0]][index[1]]
     # add this step to warping path length
     wp_length_result = wp_length + 1
     # store result for memoization
-    result = {'similarity': similarity_result,
+    result = {'similarity': similarity_result / wp_length_result,
               'wp_length': wp_length_result}
     result_store[index] = result
-    # ToDo: divide the result by the length of the warping path; every
-    #  recursion result will be divided, thus when you have a result r from
-    #  a previous recursion with a pyth length of l, the new result is
-    #  (r*l+new_r)/(l+1)
     return result
 
 
