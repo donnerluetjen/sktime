@@ -248,33 +248,28 @@ def kernel_distance(squared_euclidean_distances, sigma):
             "since we're using it for a division.")
     normalized_distances = squared_euclidean_distances / (sigma ** 2)
     kernel_distances = np.exp(-normalized_distances).squeeze()
-    return sum(kernel_distances) / len(squared_euclidean_distances)
+    return sum(kernel_distances)
 
 
 if __name__ == '__main__':
-    import os
     import time
-    from sktime.utils.data_io import load_from_arff_to_dataframe
     from sktime.classification.distance_based import \
         KNeighborsTimeSeriesClassifier
-
+    from sktime.datasets import load_UCR_UEA_dataset
+    from sklearn.model_selection import train_test_split
     from sklearn.metrics import (
         accuracy_score,
         recall_score,
         f1_score,
     )
 
-    DATA_PATH = "../datasets/data"
-    DATASET = "MedicalImages"
+    DATASET = "ECG200"
+    METRIC = "agdtw"
 
-    X_train, y_train = load_from_arff_to_dataframe(
-        os.path.join(DATA_PATH, f"{DATASET}/{DATASET}_TRAIN.arff")
-    )
-    X_test, y_test = load_from_arff_to_dataframe(
-        os.path.join(DATA_PATH, f"{DATASET}/{DATASET}_TEST.arff")
-    )
+    X, y = load_UCR_UEA_dataset(DATASET, return_X_y=True)
+    X_train, X_test, y_train, y_test = train_test_split(X, y)
 
-    knn = KNeighborsTimeSeriesClassifier(n_neighbors=1, metric="dtw")
+    knn = KNeighborsTimeSeriesClassifier(n_neighbors=1, metric=METRIC)
     knn.fit(X_train, y_train)
 
     start_time = time.perf_counter()
