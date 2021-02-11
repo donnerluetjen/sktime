@@ -259,23 +259,15 @@ if __name__ == '__main__':
     )
     import time
 
+    DATA_PATH = "../datasets/data"
+    DATASET = "MedicalImages"
 
-    DATA_PATH = "/Users/Developer/Documents/Schule/Ansgar/Goethe-Uni/Module" \
-                "/2020-WiSe/Bachelor-Seminar_KI/Seminar " \
-                "Arbeit/code/sktime/sktime/datasets/data"
-    DATASET = "SwedishLeaf"
-
-    try:
-        X, y = load_UCR_UEA_dataset(DATASET, return_X_y=True)
-        X_train, X_test, y_train, y_test = train_test_split(X, y)
-    except FileNotFoundError:
-        X_train, y_train = load_from_arff_to_dataframe(
-            os.path.join(DATA_PATH, f"{DATASET}/{DATASET}_TRAIN.arff")
-        )
-        X_test, y_test = load_from_arff_to_dataframe(
-            os.path.join(DATA_PATH, f"{DATASET}/{DATASET}_TEST.arff")
-        )
-
+    X_train, y_train = load_from_arff_to_dataframe(
+        os.path.join(DATA_PATH, f"{DATASET}/{DATASET}_TRAIN.arff")
+    )
+    X_test, y_test = load_from_arff_to_dataframe(
+        os.path.join(DATA_PATH, f"{DATASET}/{DATASET}_TEST.arff")
+    )
 
     knn = KNeighborsTimeSeriesClassifier(n_neighbors=1, metric="dtw")
     knn.fit(X_train, y_train)
