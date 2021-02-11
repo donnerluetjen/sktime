@@ -242,8 +242,7 @@ def kernel_result(index, warping_matrix, pairwise_similarities,
 
 if __name__ == '__main__':
     import os
-    from sklearn.model_selection import train_test_split
-    from sktime.datasets import load_UCR_UEA_dataset
+    import time
     from sktime.utils.data_io import load_from_arff_to_dataframe
     from sktime.classification.distance_based import \
         KNeighborsTimeSeriesClassifier
@@ -251,13 +250,8 @@ if __name__ == '__main__':
     from sklearn.metrics import (
         accuracy_score,
         recall_score,
-        roc_auc_score,
-        roc_curve,
-        average_precision_score,
         f1_score,
-        make_scorer,
     )
-    import time
 
     DATA_PATH = "../datasets/data"
     DATASET = "MedicalImages"
