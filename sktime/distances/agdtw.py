@@ -241,8 +241,10 @@ def kernel_result(index, warping_matrix, pairwise_similarities,
 
 
 if __name__ == '__main__':
+    import os
     from sklearn.model_selection import train_test_split
     from sktime.datasets import load_UCR_UEA_dataset
+    from sktime.utils.data_io import load_from_arff_to_dataframe
     from sktime.classification.distance_based import \
         KNeighborsTimeSeriesClassifier
 
@@ -257,26 +259,33 @@ if __name__ == '__main__':
     )
     import time
 
-    X, y = load_UCR_UEA_dataset("DodgerLoopGame", return_X_y=True)
-    X_train, X_test, y_train, y_test = train_test_split(X, y)
+
+    DATA_PATH = "/Users/Developer/Documents/Schule/Ansgar/Goethe-Uni/Module" \
+                "/2020-WiSe/Bachelor-Seminar_KI/Seminar " \
+                "Arbeit/code/sktime/sktime/datasets/data"
+    DATASET = "SwedishLeaf"
+
+    try:
+        X, y = load_UCR_UEA_dataset(DATASET, return_X_y=True)
+        X_train, X_test, y_train, y_test = train_test_split(X, y)
+    except FileNotFoundError:
+        X_train, y_train = load_from_arff_to_dataframe(
+            os.path.join(DATA_PATH, f"{DATASET}/{DATASET}_TRAIN.arff")
+        )
+        X_test, y_test = load_from_arff_to_dataframe(
+            os.path.join(DATA_PATH, f"{DATASET}/{DATASET}_TEST.arff")
+        )
+
+
+    knn = KNeighborsTimeSeriesClassifier(n_neighbors=1, metric="dtw")
+    knn.fit(X_train, y_train)
+
     start_time = time.perf_counter()
 
-    knn = KNeighborsTimeSeriesClassifier(n_neighbors=1, metric="agdtw")
-    knn.fit(X_train, y_train)
     y_test_pred = knn.predict(X_test)
     print("accuracy: ", accuracy_score(y_test, y_test_pred))
-    print("f1 score: ", f1_score(y_test, y_test_pred, average='macro'))
     print("recall: ", recall_score(y_test, y_test_pred, average='macro'))
-
-    """
-    Without averaging the similarity value
-    accuracy:  0.5
-    f1 score:  0.4666666666666666
-    recall:  0.5137844611528822
-    Elapsed Time: 5.393e+03 s
-    
-    Process finished with exit code 0 
-    """
+    print("f1 score: ", f1_score(y_test, y_test_pred, average='macro'))
 
     end_time = time.perf_counter()
     print(f"Elapsed Time: {(end_time - start_time):.3e} s")
