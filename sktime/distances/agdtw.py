@@ -70,7 +70,7 @@ def agdtw_distance(first, second, window=1, sigma=1.0):
                                         result_store={})
     # normalize the similarity value by dividing by the number of values
     # accumulated
-    return warping_path_result['similarity']
+    return 1 - warping_path_result['similarity']
 
 
 def replace_nans(series):
@@ -248,7 +248,7 @@ if __name__ == '__main__':
         f1_score,
     )
 
-    DATASET = "SwedishLeaf"
+    DATASET = "DodgerLoopGame"
     METRIC = "agdtw"
 
     X, y = load_UCR_UEA_dataset(DATASET, return_X_y=True)
