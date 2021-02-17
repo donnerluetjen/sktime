@@ -58,7 +58,7 @@ def agdtw_distance(first, second, window=1, sigma=1.0):
     warp_path = squared_euclidean_along_warp_path(warp_matrix,
                                                   pairwise_distances)
 
-    return kernel_distance(warp_path, sigma)
+    return 1 - kernel_distance(warp_path, sigma)
 
 
 def replace_nans(series):
@@ -263,7 +263,7 @@ if __name__ == '__main__':
         f1_score,
     )
 
-    DATASET = "ECG200"
+    DATASET = "DodgerLoopGame"
     METRIC = "agdtw"
 
     X, y = load_UCR_UEA_dataset(DATASET, return_X_y=True)
