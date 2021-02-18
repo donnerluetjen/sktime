@@ -267,7 +267,7 @@ if __name__ == '__main__':
     ALGORITHM = "AGDTW-C"
     METRIC = "agdtw"
 
-    DATASETS = ["ECG200", "DodgerLoopGame"]
+    DATASETS = ["ECG200", "DodgerLoopGame", "SwedishLeaf", "MedicalImages"]
 
     for dataset in DATASETS:
         np.random.seed(1)
