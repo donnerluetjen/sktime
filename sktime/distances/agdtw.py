@@ -248,21 +248,33 @@ if __name__ == '__main__':
         f1_score,
     )
 
-    DATASET = "SwedishLeaf"
+
+    ALGORITHM = "AGDTW-BA"
     METRIC = "agdtw"
 
-    X, y = load_UCR_UEA_dataset(DATASET, return_X_y=True)
-    X_train, X_test, y_train, y_test = train_test_split(X, y)
+    DATASETS = ["ECG200", "DodgerLoopGame"]
 
-    knn = KNeighborsTimeSeriesClassifier(n_neighbors=1, metric=METRIC)
-    knn.fit(X_train, y_train)
+    for dataset in DATASETS:
+        np.random.seed(1)
 
-    start_time = time.perf_counter()
+        X, y = load_UCR_UEA_dataset(dataset, return_X_y=True)
+        X_train, X_test, y_train, y_test = train_test_split(X, y)
 
-    y_test_pred = knn.predict(X_test)
-    print("accuracy: ", accuracy_score(y_test, y_test_pred))
-    print("recall: ", recall_score(y_test, y_test_pred, average='macro'))
-    print("f1 score: ", f1_score(y_test, y_test_pred, average='macro'))
+        knn = KNeighborsTimeSeriesClassifier(n_neighbors=1, metric=METRIC)
+        knn.fit(X_train, y_train)
 
-    end_time = time.perf_counter()
-    print(f"Elapsed Time: {(end_time - start_time):.3e} s")
+        start_time = time.perf_counter()
+
+        y_test_pred = knn.predict(X_test)
+
+        print("=============================================================")
+        print("Run of algorithm: ", ALGORITHM, " on dataset: ", dataset)
+        print("    - - - - - - - - - - - - - - - - - - - - - - - - - - -    ")
+        print("accuracy: ", accuracy_score(y_test, y_test_pred))
+        print("recall: ", recall_score(y_test, y_test_pred, average='macro'))
+        print("f1 score: ", f1_score(y_test, y_test_pred, average='macro'))
+
+        end_time = time.perf_counter()
+        print(f"Elapsed Time: {(end_time - start_time):.3e} s")
+        print("=============================================================")
+        print("\n")
