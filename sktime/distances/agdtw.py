@@ -185,7 +185,7 @@ def dynamic_section(matrix, current_index=(0, 0)):
     """
     section_org_row = max(current_index[0] - 1, 0)
     section_org_col = max(current_index[1] - 1, 0)
-    section_end_row = min(current_index[0] + 1, matrix.shape[0])
+    section_end_row = current_index[0]
     section_end_col = current_index[1]
     # copy section and make its elements float to for allow np.inf
     section = matrix[
