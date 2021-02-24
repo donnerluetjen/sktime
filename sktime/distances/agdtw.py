@@ -236,10 +236,6 @@ def kernel_result(index, warping_matrix, pairwise_similarities,
     result = {'similarity': similarity_result,
               'wp_length': wp_length_result}
     result_store[index] = result
-    # ToDo: divide the result by the length of the warping path; every
-    #  recursion result will be divided, thus when you have a result r from
-    #  a previous recursion with a pyth length of l, the new result is
-    #  (r*l+new_r)/(l+1)
     return result
 
 
