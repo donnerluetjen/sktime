@@ -39,6 +39,9 @@ def agdtw_distance(first, second, window=1, sigma=1.0):
       bibsource = {dblp computer science bibliography, https://dblp.org}
     }
 
+    This implementation produces an averaged similarity value by recursively
+    backtracking the warping path and choosing the best result.
+
     the method accepts two univariate time series, eg. 2D single row arrays
     the passed in time series are stripped from NANs
     @param first: numpy array containing the first time series
@@ -255,7 +258,7 @@ if __name__ == '__main__':
     DATASETS = ["ECG200", "DodgerLoopGame"]
 
     for dataset in DATASETS:
-        np.random.seed(1)
+        np.random.seed(1)  # required to obtain reproducible results
 
         X, y = load_UCR_UEA_dataset(dataset, return_X_y=True)
         X_train, X_test, y_train, y_test = train_test_split(X, y)
