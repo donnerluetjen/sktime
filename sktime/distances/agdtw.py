@@ -39,7 +39,10 @@ def agdtw_distance(first, second, window=1, sigma=1.0):
       bibsource = {dblp computer science bibliography, https://dblp.org}
     }
 
-    the method accepts two univariate time series, eg. 2D single row arrays
+    This implementation produces an accumulated similarity value by recursively
+    backtracking the warping path and choosing the best result.
+
+    The method accepts two univariate time series, eg. 2D single row arrays
     the passed in time series are stripped from NANs
     @param first: numpy array containing the first time series
     @param second: numpy array containing the second time series
@@ -233,10 +236,6 @@ def kernel_result(index, warping_matrix, pairwise_similarities,
     result = {'similarity': similarity_result,
               'wp_length': wp_length_result}
     result_store[index] = result
-    # ToDo: divide the result by the length of the warping path; every
-    #  recursion result will be divided, thus when you have a result r from
-    #  a previous recursion with a pyth length of l, the new result is
-    #  (r*l+new_r)/(l+1)
     return result
 
 
@@ -259,7 +258,7 @@ if __name__ == '__main__':
     DATASETS = ["ECG200", "DodgerLoopGame", "SwedishLeaf", "MedicalImages"]
 
     for dataset in DATASETS:
-        np.random.seed(1)
+        np.random.seed(1)  # required to obtain reproducible results
 
         X, y = load_UCR_UEA_dataset(dataset, return_X_y=True)
         X_train, X_test, y_train, y_test = train_test_split(X, y)
