@@ -37,7 +37,9 @@ def agdtw_distance(first, second, window=1, sigma=1.0):
       bibsource = {dblp computer science bibliography, https://dblp.org}
     }
 
-    the method accepts two univariate time series, eg. 2D single row arrays
+    This implementation produces an accumulated similarity value.
+
+    The method accepts two univariate time series, eg. 2D single row arrays
     @param first: numpy array containing the first time series
     @param second: numpy array containing the second time series
     @param window: float representing the window width as ratio of the window
@@ -270,7 +272,7 @@ if __name__ == '__main__':
     DATASETS = ["ECG200", "DodgerLoopGame", "SwedishLeaf", "MedicalImages"]
 
     for dataset in DATASETS:
-        np.random.seed(1)
+        np.random.seed(1)  # required to obtain reproducible results
 
         X, y = load_UCR_UEA_dataset(dataset, return_X_y=True)
         X_train, X_test, y_train, y_test = train_test_split(X, y)
