@@ -39,7 +39,7 @@ def agdtw_distance(first, second, window=1, sigma=1.0):
       bibsource = {dblp computer science bibliography, https://dblp.org}
     }
 
-    This implementation produces an accumulated similarity value by recursively
+    This implementation produces an accumulated distance value by recursively
     backtracking the warping path and choosing the best result.
 
     The method accepts two univariate time series, eg. 2D single row arrays
